@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Duck Hunt</title>
     <style>
-      /* Silkscreen — used only for the countdown (avoids the '1' top-flag artifact) */
+      /* Silkscreen — used only for the countdown */
       @font-face {
         font-family: 'Silkscreen';
         src: url('./fonts/Silkscreen-Regular.ttf') format('truetype');
@@ -20,7 +20,7 @@
         font-style: normal;
         font-display: swap;
       }
-      /* Press Start 2P — primary pixel font for HUD, lobby, end screen */
+      /* Press Start 2P — primary pixel font */
       @font-face {
         font-family: 'Press Start 2P';
         src: url('./fonts/PressStart2P-Regular.ttf') format('truetype');
@@ -37,36 +37,47 @@
         box-sizing: border-box;
       }
       
-      /* --- UPRAVENÁ ČÁST PRO CENTROVÁNÍ --- */
+      /* Úprava body - vytvoří černé pozadí a vycentruje app-wrapper */
       html,
       body {
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #000;
+        background: #111; /* Tmavé okraje mimo hru */
         font-family: var(--font-pixel);
         display: flex;
         justify-content: center;
         align-items: center;
       }
-      #game-container {
+
+      /* Nový hlavní kontejner, který udrží pevný poměr stran 16:9 */
+      #app-wrapper {
+        position: relative;
         width: 100%;
         height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        max-width: calc(100vh * (16 / 9));
+        max-height: calc(100vw * (9 / 16));
+        aspect-ratio: 16 / 9;
+        background: #000;
+        overflow: hidden;
+      }
+
+      #game-container {
+        position: absolute; /* Změněno z fixed */
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
       }
       #game-container canvas {
         display: block;
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
+        width: 100%;
+        height: 100%;
       }
-      /* ------------------------------------ */
-
+      
       /* HTML overlay (lobby, countdown, end, HUD) */
       #overlay {
-        position: fixed;
+        position: absolute; /* Změněno z fixed */
         top: 0;
         left: 0;
         right: 0;
@@ -87,7 +98,7 @@
 
       /* HUD */
       #hud {
-        position: fixed;
+        position: absolute; /* Změněno z fixed */
         top: 0;
         left: 0;
         right: 0;
@@ -140,7 +151,7 @@
 
       /* Lobby */
       #lobby {
-        position: fixed;
+        position: absolute; /* Změněno z fixed */
         top: 80px;
         left: 0;
         right: 0;
@@ -151,7 +162,7 @@
         gap: 8px;
         padding-top: 8px;
         background: rgba(0, 0, 0, 0.0);
-        pointer-events: none; /* clicks pass through to canvas */
+        pointer-events: none;
       }
       #lobby > * { pointer-events: auto; }
       #lobby .start-btn { pointer-events: auto; }
@@ -219,7 +230,7 @@
 
       /* Countdown */
       #countdown {
-        position: fixed;
+        position: absolute; /* Změněno z fixed */
         top: 0;
         left: 0;
         right: 0;
@@ -238,7 +249,7 @@
 
       /* End screen */
       #end-screen {
-        position: fixed;
+        position: absolute; /* Změněno z fixed */
         top: 0;
         left: 0;
         right: 0;
@@ -304,7 +315,6 @@
         box-shadow: 4px 4px 0 #000;
         margin-top: 16px;
       }
-      /* Make sure all overlay headings inherit white */
       #end-screen h1 { color: #fff; }
     </style>
     <script type="module" crossorigin src="./assets/index-C3omhLnq.js"></script>
@@ -320,49 +330,51 @@
     <link rel="modulepreload" crossorigin href="./assets/CanvasPool-CrbkzhIa.js">
   </head>
   <body>
-    <div id="game-container"></div>
+    <!-- Vše z body přesunuto do tohoto obalu, který udrží pevný poměr 16:9 a vycentruje vše najednou -->
+    <div id="app-wrapper">
+      <div id="game-container"></div>
 
-    <!-- HUD (always present, populated during play) -->
-    <div id="hud" class="hidden">
-      <div class="score-box not-joined" data-color="0">
-        <div class="score-color" style="background: #e53935"></div>
-        <span class="score-value">0</span>
+      <!-- HUD -->
+      <div id="hud" class="hidden">
+        <div class="score-box not-joined" data-color="0">
+          <div class="score-color" style="background: #e53935"></div>
+          <span class="score-value">0</span>
+        </div>
+        <div class="score-box not-joined" data-color="1">
+          <div class="score-color" style="background: #fdd835"></div>
+          <span class="score-value">0</span>
+        </div>
+        <div id="timer">60</div>
+        <div class="score-box not-joined" data-color="2">
+          <div class="score-color" style="background: #43a047"></div>
+          <span class="score-value">0</span>
+        </div>
+        <div class="score-box not-joined" data-color="3">
+          <div class="score-color" style="background: #1e88e5"></div>
+          <span class="score-value">0</span>
+        </div>
       </div>
-      <div class="score-box not-joined" data-color="1">
-        <div class="score-color" style="background: #fdd835"></div>
-        <span class="score-value">0</span>
+
+      <!-- Lobby -->
+      <div id="lobby" class="hidden">
+        <h1>DUCK HUNT</h1>
+        <div class="subtitle">SHOOT YOUR COLOR TO JOIN</div>
+        <div class="ready-indicator" data-color="0">READY</div>
+        <div class="ready-indicator" data-color="1">READY</div>
+        <div class="ready-indicator" data-color="2">READY</div>
+        <div class="ready-indicator" data-color="3">READY</div>
+        <button class="start-btn hidden" data-action="start">START</button>
       </div>
-      <div id="timer">60</div>
-      <div class="score-box not-joined" data-color="2">
-        <div class="score-color" style="background: #43a047"></div>
-        <span class="score-value">0</span>
-      </div>
-      <div class="score-box not-joined" data-color="3">
-        <div class="score-color" style="background: #1e88e5"></div>
-        <span class="score-value">0</span>
+
+      <!-- Countdown -->
+      <div id="countdown" class="hidden"></div>
+
+      <!-- End screen -->
+      <div id="end-screen" class="hidden">
+        <h1>TIME'S UP!</h1>
+        <div id="scoreboard"></div>
+        <button id="replay-btn" data-action="replay">PLAY AGAIN</button>
       </div>
     </div>
-
-    <!-- Lobby -->
-    <div id="lobby" class="hidden">
-      <h1>DUCK HUNT</h1>
-      <div class="subtitle">SHOOT YOUR COLOR TO JOIN</div>
-      <div class="ready-indicator" data-color="0">READY</div>
-      <div class="ready-indicator" data-color="1">READY</div>
-      <div class="ready-indicator" data-color="2">READY</div>
-      <div class="ready-indicator" data-color="3">READY</div>
-      <button class="start-btn hidden" data-action="start">START</button>
-    </div>
-
-    <!-- Countdown -->
-    <div id="countdown" class="hidden"></div>
-
-    <!-- End screen -->
-    <div id="end-screen" class="hidden">
-      <h1>TIME'S UP!</h1>
-      <div id="scoreboard"></div>
-      <button id="replay-btn" data-action="replay">PLAY AGAIN</button>
-    </div>
-
   </body>
 </html>
